@@ -26,9 +26,6 @@ TwoInchPulse addresses this need by integrating a **load cell**, **high-resoluti
 - **Compression Depth Measurement**  
   Load cell + … ADC captures applied pressure to estimate compression depth.
 
-- **Rhythm & Recoil Tracking**  
-  MPU6050 measures Z-axis acceleration to determine compression frequency and detect insufficient recoil.
-
 - **Smart Feedback Algorithm**  
   The system categorizes each compression as:  
   - Below threshold  
@@ -56,10 +53,18 @@ TwoInchPulse addresses this need by integrating a **load cell**, **high-resoluti
 | MCU              | ESP32-C3             | Controls logic, collects data, BLE     |
 | Force Sensor     | Load Cell (5kg)      | Measures compression force             |
 | ADC              | NAU7802              | Converts analog signal to digital      |
-| Motion Sensor    | MPU6050              | Detects compression rhythm & motion    |
 | Display          | OLED SSD1306 (I2C)   | Visual output for compression feedback |
 | Audio Output     | Passive Buzzer       | Provides auditory rhythm/alert cues    |
 | Power Supply     | CR2032 or LiPo       | Portable battery power                 |
+
+---
+
+## Datasheets
+
+All hardware component datasheets are located in the [Datasheets](./Datasheets) folder:
+- [NAU7802.pdf](./Datasheets/NAU7802.pdf)
+- [SSD1306.pdf](./Datasheets/SSD1306.pdf)
+- [buzzer.pdf](./Datasheets/buzzer.pdf)
 
 
 
