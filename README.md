@@ -61,10 +61,7 @@ TwoInchPulse addresses this need by integrating a **load cell**, **high-resoluti
 
 ## Datasheets
 
-All hardware component datasheets are located in the [Datasheets](./Datasheets) folder:
-- [NAU7802.pdf](./Datasheets/NAU7802.pdf)
-- [SSD1306.pdf](./Datasheets/SSD1306.pdf)
-- [buzzer.pdf](./Datasheets/buzzer.pdf)
+All hardware component datasheets are located in the [Datasheets](./Datasheets) folder.
 
 
 
