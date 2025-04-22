@@ -17,7 +17,7 @@ Performing high-quality CPR requires chest compressions at the correct **depth**
 
 ## Our Solution
 
-TwoInchPulse addresses this need by integrating a **load cell**, **high-resolution ADC**, and **IMU** with an **ESP32-C3 microcontroller** to track compression force, motion, and rhythm. Feedback is provided through an **OLED display** and **buzzer**, allowing trainees to self-correct in real time.
+TwoInchPulse addresses this need by integrating a **load cell**, **high-resolution ADC**, and **IMU** with an **ESP32-S3 microcontroller** to track compression force, motion, and rhythm. Feedback is provided through an **OLED display** and **buzzer**, allowing trainees to self-correct in real time.
 
 ---
 
@@ -50,8 +50,8 @@ TwoInchPulse addresses this need by integrating a **load cell**, **high-resoluti
 
 | Component         | Model / Type         | Purpose                                |
 |------------------|----------------------|----------------------------------------|
-| MCU              | ESP32-C3             | Controls logic, collects data, BLE     |
-| Force Sensor     | Load Cell (5kg)      | Measures compression force             |
+| MCU              | ESP32-S3            | Controls logic, collects data, BLE     |
+| Force Sensor     | Load Cell (100kg)   | Measures compression force             |
 | ADC              | NAU7802              | Converts analog signal to digital      |
 | Display          | OLED SSD1306 (I2C)   | Visual output for compression feedback |
 | Audio Output     | Passive Buzzer       | Provides auditory rhythm/alert cues    |
@@ -65,5 +65,12 @@ All hardware component datasheets are located in the [Datasheets](./Datasheets) 
 
 
 
+## Code Instructions
 
+```
+TECHIN515_TEAM5/
+├── Arduino Codes/
+│   ├── Milestone1.ino
+```
 
+Upload Milestone1.ino to the MCU
