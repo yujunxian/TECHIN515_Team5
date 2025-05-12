@@ -1,0 +1,34 @@
+{
+  "name": "cpr-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@firebase/app": "^0.12.1",
+    "@firebase/auth": "^1.10.2",
+    "@firebase/firestore": "^4.7.12",
+    "date-fns": "^4.1.0",
+    "firebase": "^11.7.1",
+    "firebase-admin": "^13.3.0",
+    "nex": "^2.0.22",
+    "next": "15.3.2",
+    "next-auth": "^4.24.11",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "recharts": "^2.15.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/firebase": "^3.2.3",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4",
+    "typescript": "^5.8.3"
+  }
+}
