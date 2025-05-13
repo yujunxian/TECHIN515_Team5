@@ -40,34 +40,32 @@ export default function ForceVisualization({ sensorData }: ForceVisualizationPro
     // Extract sensor values
     const { distance1, distance2, distance3, distance4 } = sensorData;
     
-    // Convert distance values to pressure (inverse relationship - closer means more pressure)
-    // We'll normalize distances where lower values mean higher pressure
-    const maxDistance = 50; // Adjust based on your sensor's range
-    const pressure1 = Math.max(0, 1 - (distance1 / maxDistance));
-    const pressure2 = Math.max(0, 1 - (distance2 / maxDistance));
-    const pressure3 = Math.max(0, 1 - (distance3 / maxDistance));
-    const pressure4 = Math.max(0, 1 - (distance4 / maxDistance));
+    // Use distance directly for visualization
+    const d1 = distance1;
+    const d2 = distance2;
+    const d3 = distance3;
+    const d4 = distance4;
     
-    // Draw gradient background representing pressure distribution
-    const gradient = createPressureGradient(ctx, width, height, pressure1, pressure2, pressure3, pressure4);
+    // Draw gradient background representing Distance distribution
+    const gradient = createDistanceGradient(ctx, width, height, d1, d2, d3, d4);
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
     
     // Mark the corners with sensor positions
-    drawSensorMarker(ctx, 0, 0, pressure1, "1");                   // Top-left
-    drawSensorMarker(ctx, width, 0, pressure2, "2");               // Top-right
-    drawSensorMarker(ctx, 0, height, pressure3, "3");              // Bottom-left
-    drawSensorMarker(ctx, width, height, pressure4, "4");          // Bottom-right
+    drawSensorMarker(ctx, 0, 0, d1, "1");                   // Top-left
+    drawSensorMarker(ctx, width, 0, d2, "2");               // Top-right
+    drawSensorMarker(ctx, 0, height, d3, "3");              // Bottom-left
+    drawSensorMarker(ctx, width, height, d4, "4");          // Bottom-right
     
-    // Indicate pressure center with a circle
-    if (pressure1 > 0.1 || pressure2 > 0.1 || pressure3 > 0.1 || pressure4 > 0.1) {
-      // Calculate pressure center (weighted average)
-      const totalPressure = pressure1 + pressure2 + pressure3 + pressure4;
-      if (totalPressure > 0) {
-        const centerX = (pressure1 * 0 + pressure2 * width + pressure3 * 0 + pressure4 * width) / totalPressure;
-        const centerY = (pressure1 * 0 + pressure2 * 0 + pressure3 * height + pressure4 * height) / totalPressure;
+    // Indicate Distance center with a circle
+    if (d1 > 0.1 || d2 > 0.1 || d3 > 0.1 || d4 > 0.1) {
+      // Calculate Distance center (weighted average)
+      const totalDistance = d1 + d2 + d3 + d4;
+      if (totalDistance > 0) {
+        const centerX = (d1 * 0 + d2 * width + d3 * 0 + d4 * width) / totalDistance;
+        const centerY = (d1 * 0 + d2 * 0 + d3 * height + d4 * height) / totalDistance;
         
-        // Draw pressure center
+        // Draw Distance center
         ctx.beginPath();
         ctx.arc(centerX, centerY, 15, 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
@@ -80,7 +78,7 @@ export default function ForceVisualization({ sensorData }: ForceVisualizationPro
     
   }, [sensorData]);
   
-  function createPressureGradient(
+  function createDistanceGradient(
     ctx: CanvasRenderingContext2D, 
     width: number, 
     height: number, 
@@ -91,10 +89,10 @@ export default function ForceVisualization({ sensorData }: ForceVisualizationPro
   ) {
     // Create a radial gradient for each corner
     const gradients = [
-      { x: 0, y: 0, r: width/2, pressure: p1 },         // Top-left
-      { x: width, y: 0, r: width/2, pressure: p2 },     // Top-right
-      { x: 0, y: height, r: width/2, pressure: p3 },    // Bottom-left
-      { x: width, y: height, r: width/2, pressure: p4 } // Bottom-right
+      { x: 0, y: 0, r: width/2, Distance: p1 },         // Top-left
+      { x: width, y: 0, r: width/2, Distance: p2 },     // Top-right
+      { x: 0, y: height, r: width/2, Distance: p3 },    // Bottom-left
+      { x: width, y: height, r: width/2, Distance: p4 } // Bottom-right
     ];
     
     // Create an off-screen canvas for compositing
@@ -106,14 +104,14 @@ export default function ForceVisualization({ sensorData }: ForceVisualizationPro
     if (!offCtx) return ctx.createLinearGradient(0, 0, 0, 0); // Fallback
     
     // Draw each gradient
-    for (const { x, y, r, pressure } of gradients) {
-      if (pressure < 0.05) continue; // Skip very low pressures
+    for (const { x, y, r, Distance } of gradients) {
+      if (Distance < 0.05) continue; // Skip very low Distances
       
       const gradient = offCtx.createRadialGradient(x, y, 0, x, y, r);
       
-      // Color intensity based on pressure (red to blue spectrum for heat map)
-      // More pressure = more red
-      const intensity = Math.min(1, pressure * 1.5); // Amplify for visibility
+      // Color intensity based on Distance (red to blue spectrum for heat map)
+      // More Distance = more red
+      const intensity = Math.min(1, Distance * 1.5); // Amplify for visibility
       gradient.addColorStop(0, `rgba(255, 0, 0, ${intensity})`);
       gradient.addColorStop(0.7, `rgba(255, 0, 0, 0)`);
       
@@ -131,7 +129,7 @@ export default function ForceVisualization({ sensorData }: ForceVisualizationPro
     ctx: CanvasRenderingContext2D, 
     x: number, 
     y: number, 
-    pressure: number, 
+    Distance: number, 
     label: string
   ) {
     const radius = 20;
@@ -140,8 +138,8 @@ export default function ForceVisualization({ sensorData }: ForceVisualizationPro
     // Draw circle at corner
     ctx.arc(x, y, radius, 0, Math.PI * 2);
     
-    // Fill with color based on pressure
-    const intensity = Math.min(255, Math.floor(pressure * 255));
+    // Fill with color based on Distance
+    const intensity = Math.min(255, Math.floor(Distance * 255));
     ctx.fillStyle = `rgb(${intensity}, ${255 - intensity}, 0)`;
     ctx.fill();
     
@@ -157,16 +155,16 @@ export default function ForceVisualization({ sensorData }: ForceVisualizationPro
     ctx.textBaseline = 'middle';
     ctx.fillText(label, x, y);
     
-    // Add pressure value
-    const pressureValue = Math.round(pressure * 100);
+    // Add Distance value
+    const DistanceValue = Math.round(Distance * 100);
     ctx.fillStyle = '#ffffff';
     ctx.font = '10px Arial';
-    ctx.fillText(`${pressureValue}%`, x, y + 15);
+    ctx.fillText(`${DistanceValue}%`, x, y + 15);
   }
   
   return (
     <div className="flex flex-col items-center">
-      <h3 className="text-lg font-medium mb-2">Pressure Distribution</h3>
+      <h3 className="text-lg font-medium mb-2">Distance Distribution</h3>
       <div className="relative border border-gray-300 rounded-lg overflow-hidden">
         <canvas 
           ref={canvasRef} 
@@ -181,9 +179,9 @@ export default function ForceVisualization({ sensorData }: ForceVisualizationPro
         )}
       </div>
       <div className="mt-2 text-sm text-gray-500">
-        <span className="inline-block w-3 h-3 rounded-full bg-red-500 mr-1"></span> High Pressure
-        <span className="inline-block ml-4 w-3 h-3 rounded-full bg-yellow-500 mr-1"></span> Medium Pressure
-        <span className="inline-block ml-4 w-3 h-3 rounded-full bg-green-500 mr-1"></span> Low Pressure
+        <span className="inline-block w-3 h-3 rounded-full bg-red-500 mr-1"></span> Distance Too Low/High
+        {/* <span className="inline-block ml-4 w-3 h-3 rounded-full bg-yellow-500 mr-1"></span> Medium Distance */}
+        <span className="inline-block ml-4 w-3 h-3 rounded-full bg-green-500 mr-1"></span> Proper Distance
       </div>
     </div>
   );

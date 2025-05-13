@@ -12,6 +12,7 @@
     "@firebase/app": "^0.12.1",
     "@firebase/auth": "^1.10.2",
     "@firebase/firestore": "^4.7.12",
+    "antd": "^5.25.1",
     "date-fns": "^4.1.0",
     "firebase": "^11.7.1",
     "firebase-admin": "^13.3.0",
