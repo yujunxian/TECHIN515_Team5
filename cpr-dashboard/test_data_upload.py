@@ -37,31 +37,25 @@ def generate_mock_data(in_range=True):
     """生成模拟传感器数据"""
     # 定义范围 - 与仪表板中的范围匹配
     ranges = {
-        "distance": {"min": 4, "max": 6},         # 理想CPR深度范围
+        "weight": {"min": 42, "max": 60},         # 理想CPR深度范围
         "accelX": {"min": -0.5, "max": 0.5},      # 加速度计X轴范围
         "accelY": {"min": -0.5, "max": 0.5},      # 加速度计Y轴范围
         "accelZ": {"min": -1.5, "max": -0.5},     # 加速度计Z轴范围
-        "gyroX": {"min": -5, "max": 5},           # 陀螺仪X轴范围
-        "gyroY": {"min": -5, "max": 5},           # 陀螺仪Y轴范围
-        "gyroZ": {"min": -5, "max": 5}            # 陀螺仪Z轴范围
+        
     }
     
     # 如果需要超出范围的值
     if not in_range:
         # 修改部分范围，使值超出
-        ranges["distance"] = {"min": 2, "max": 3}     # 太浅
+        ranges["weights"] = {"min": 20, "max": 30}     # 太浅
         ranges["accelX"] = {"min": 0.8, "max": 1.2}   # 太大
-        ranges["gyroZ"] = {"min": 8, "max": 10}       # 太大
     
     # 生成数据
     return {
-        "distance": random_in_range(ranges["distance"]["min"], ranges["distance"]["max"]),
+        "weights": random_in_range(ranges["distance"]["min"], ranges["distance"]["max"]),
         "accelX": random_in_range(ranges["accelX"]["min"], ranges["accelX"]["max"]),
         "accelY": random_in_range(ranges["accelY"]["min"], ranges["accelY"]["max"]),
         "accelZ": random_in_range(ranges["accelZ"]["min"], ranges["accelZ"]["max"]),
-        "gyroX": random_in_range(ranges["gyroX"]["min"], ranges["gyroX"]["max"]),
-        "gyroY": random_in_range(ranges["gyroY"]["min"], ranges["gyroY"]["max"]),
-        "gyroZ": random_in_range(ranges["gyroZ"]["min"], ranges["gyroZ"]["max"]),
         "timestamp": int(time.time() * 1000)  # 当前时间戳（毫秒）
     }
 
@@ -90,42 +84,53 @@ def generate_historical_data(count=20):
     
     return data
 
+def generate_weight_mock_data():
+    """生成一条weight/accel模拟数据"""
+    return {
+        "weight": round(random.uniform(20, 80), 2),
+        "accelX": round(random.uniform(-0.3, 0.3), 2),
+        "accelY": round(random.uniform(-0.3, 0.3), 2),
+        "accelZ": round(random.uniform(-1.5, -0.5), 2),
+        "timestamp": int(time.time()),
+    }
+
 def upload_mock_data():
-    """上传模拟数据到Firebase"""
+    """上传模拟数据到Firebase（weight/accel版）"""
     try:
         print("开始上传模拟数据到Firebase...")
-        
+
         # 生成本次批次唯一sessionId
         session_id = f"batch-{int(time.time())}"
-        
-        # 生成并上传当前数据（50%概率在范围内，50%概率不在范围内）
-        in_range = random.random() < 0.5
-        current_data = generate_mock_data(in_range)
+
+        # 生成并上传当前数据
+        current_data = generate_weight_mock_data()
         current_data["sessionId"] = session_id
-        
-        # 上传当前数据
+
         ref = db.reference('sensors/latest')
         ref.set(current_data)
         print("当前数据上传成功:", json.dumps(current_data, indent=2))
-        
+
         # 生成并上传历史数据 (20条)
-        history_data = generate_historical_data(20)
-        # 给每条历史数据加上同一个sessionId
-        for v in history_data.values():
-            v["sessionId"] = session_id
-        
-        # 上传历史数据（每条为一个节点，便于前端分组）
+        history_data = {}
+        base_timestamp = int(time.time())
+        for i in range(20):
+            d = generate_weight_mock_data()
+            d["sessionId"] = session_id
+            d["timestamp"] = base_timestamp + i  # 递增
+            data_id = f"data-{i}-{d['timestamp']}"
+            history_data[data_id] = d
+
         ref = db.reference('sensors/history')
         ref.update(history_data)
         print(f"历史数据上传成功: {len(history_data)}条记录")
-        
+
         return {
             "success": True,
             "message": "模拟数据已成功上传到Firebase",
             "current_data": current_data,
             "history_count": len(history_data)
         }
-    
+
     except Exception as e:
         print(f"上传数据时出错: {str(e)}")
         return {

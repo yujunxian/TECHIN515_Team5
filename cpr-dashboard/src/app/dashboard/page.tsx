@@ -25,14 +25,28 @@ const database = getDatabase(app);
 
 // Define sensor ranges for valid values
 const sensorRanges = {
-    distance: { min: 4.8, max: 6.2 },
+    distance: { min: 40, max: 60 },
     accelX: { min: -0.2, max: 0.2 },
     accelY: { min: -0.2, max: 0.2 },
-    accelZ: { min: -1.5, max: -0.5 },
-    gyroX: { min: -5, max: 5 },
-    gyroY: { min: -5, max: 5 },
-    gyroZ: { min: -5, max: 5 }
+    accelZ: { min: -1.5, max: 1.5 },
 };
+
+
+
+// 箭头SVG
+const Arrow = ({ direction }: { direction: 'left' | 'right' }) => (
+  <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+    <path
+      d={direction === 'left'
+        ? 'M15 19l-7-7 7-7'
+        : 'M9 5l7 7-7 7'}
+      stroke="red"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 
 // 替换历史数据区域为按sessionId分组的折叠面板
 // 分组函数
@@ -142,21 +156,18 @@ export default function DashboardPage() {
 
     // Format MPU data for display
     const formatMpuData = (data: any) => {
-        if (!data) return { accel: "N/A", gyro: "N/A" };
+        if (!data) return { accel: "N/A"};
 
         const accel = data.accelX !== undefined && data.accelY !== undefined && data.accelZ !== undefined
             ? `X: ${data.accelX.toFixed(2)}, Y: ${data.accelY.toFixed(2)}, Z: ${data.accelZ.toFixed(2)}`
             : "N/A";
 
-        const gyro = data.gyroX !== undefined && data.gyroY !== undefined && data.gyroZ !== undefined
-            ? `X: ${data.gyroX.toFixed(2)}, Y: ${data.gyroY.toFixed(2)}, Z: ${data.gyroZ.toFixed(2)}`
-            : "N/A";
 
-        return { accel, gyro };
+        return { accel };
     };
 
     // Check if MPU values are in range for coloring
-    const getMpuSensorStatus = (data: any, type: 'accel' | 'gyro') => {
+    const getMpuSensorStatus = (data: any, type: 'accel' ) => {
         if (!data) return { bg: "bg-gray-50", text: "text-gray-700", indicator: "bg-gray-100" };
 
         // Check each axis for the specified type
@@ -166,11 +177,7 @@ export default function DashboardPage() {
             if (data.accelX !== undefined) allInRange = allInRange && isInRange('accelX', data.accelX);
             if (data.accelY !== undefined) allInRange = allInRange && isInRange('accelY', data.accelY);
             if (data.accelZ !== undefined) allInRange = allInRange && isInRange('accelZ', data.accelZ);
-        } else if (type === 'gyro') {
-            if (data.gyroX !== undefined) allInRange = allInRange && isInRange('gyroX', data.gyroX);
-            if (data.gyroY !== undefined) allInRange = allInRange && isInRange('gyroY', data.gyroY);
-            if (data.gyroZ !== undefined) allInRange = allInRange && isInRange('gyroZ', data.gyroZ);
-        }
+        } 
 
         return allInRange
             ? { bg: "bg-green-50", text: "text-gray-700", indicator: "bg-green-100" }  // 文本改为黑色
@@ -222,7 +229,9 @@ export default function DashboardPage() {
     // Get color classes for each sensor box
     const distanceColors = getSensorBoxColors('distance', currentData?.distance);
     const accelColors = getMpuSensorStatus(currentData, 'accel');
-    const gyroColors = getMpuSensorStatus(currentData, 'gyro');
+
+    // 加速度可视化卡片背景色判断
+    const accelZInRange = currentData.accelZ !== undefined && currentData.accelZ >= sensorRanges.accelZ.min && currentData.accelZ <= sensorRanges.accelZ.max;
     
     // 在组件内部，替换历史数据渲染部分
     const grouped = groupBySessionId(historicalData);
@@ -243,7 +252,7 @@ export default function DashboardPage() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                     {readings.map((item: any, idx: number) =>
-                        ['distance','accelX','accelY','accelZ','gyroX','gyroY','gyroZ'].map(sensor => (
+                        ["weights", "accelX", "accelY", "accelZ"].map(sensor => (
                             <tr
                                 key={`${item.sessionId || 'unknown'}-${item.timestamp || idx}-${sensor}`}
                                 className="hover:bg-gray-50"
@@ -327,54 +336,34 @@ export default function DashboardPage() {
                         <div className="p-6">
                             {currentData ? (
                                 <div className="space-y-6">
-                                    {/* TOF Distance Sensor */}
-                                    <div className={`rounded-lg p-5 ${distanceColors.bg}`}>
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <p className={`text-sm font-medium ${distanceColors.text}`}>TOF Distance</p>
-                                                <p className="text-3xl font-bold mt-2">
-                                                    {currentData.distance !== undefined ? `${currentData.distance.toFixed(1)} cm` : "N/A"}
-                                                </p>
-                                            </div>
-                                            <div className={`p-3 rounded-full ${distanceColors.indicator}`}>
-                                                <svg className={`h-6 w-6 ${distanceColors.text}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                                                </svg>
-                                            </div>
-                                        </div>
-                                        <p className={`text-sm ${distanceColors.text} mt-3`}>Compression depth measurement</p>
+                                    {/* 力传感器 */}
+                                    <div className={`rounded-lg p-5 flex flex-col items-center ${currentData.weight >= 40 && currentData.weight <= 60 ? 'bg-green-50' : 'bg-red-50'}`}>
+                                        <p className="text-sm font-medium text-black-700">Weight</p>
+                                        <p className="text-3xl font-bold mt-2">{currentData.weight !== undefined ? `${currentData.weight.toFixed(2)} kg` : "N/A"}</p>
+                                        <p className="text-xs mt-1">{currentData.weight >= 40 && currentData.weight <= 60 ? 'In Range' : 'Out of Range'}</p>
                                     </div>
-
-                                    {/* MPU Sensor - Accelerometer */}
-                                    <div className={`rounded-lg p-5 ${accelColors.bg}`}>
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <p className={`text-sm font-medium ${accelColors.text}`}>Accelerometer</p>
-                                                <p className="text-xl font-bold mt-2">{mpuData.accel}</p>
-                                            </div>
-                                            <div className={`p-3 rounded-full ${accelColors.indicator}`}>
-                                                <svg className={`h-6 w-6 ${accelColors.text}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                                </svg>
-                                            </div>
+                                    {/* 加速度可视化 */}
+                                    <div className={`rounded-lg p-5 flex flex-col items-center ${accelZInRange ? 'bg-green-50' : 'bg-red-50'}`}>
+                                        <p className="text-sm font-medium text-black-700">Vertical Acceleration</p>
+                                        <div className="flex items-center justify-center mt-2">
+                                            {/* 左箭头：X或Y小于最小值 */}
+                                            {((currentData.accelX !== undefined && currentData.accelX < sensorRanges.accelX.min) ||
+                                              (currentData.accelY !== undefined && currentData.accelY < sensorRanges.accelY.min)) && <Arrow direction="left" />}
+                                            {/* z轴数值 */}
+                                            <span className="text-3xl font-bold mx-4">{currentData.accelZ !== undefined ? currentData.accelZ.toFixed(2) : "N/A"}</span>
+                                            {/* 右箭头：X或Y大于最大值 */}
+                                            {((currentData.accelX !== undefined && currentData.accelX > sensorRanges.accelX.max) ||
+                                              (currentData.accelY !== undefined && currentData.accelY > sensorRanges.accelY.max)) && <Arrow direction="right" />}
                                         </div>
-                                        <p className={`text-sm ${accelColors.text} mt-3`}>Motion tracking (g)</p>
-                                    </div>
-
-                                    {/* MPU Sensor - Gyroscope */}
-                                    <div className={`rounded-lg p-5 ${gyroColors.bg}`}>
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <p className={`text-sm font-medium ${gyroColors.text}`}>Gyroscope</p>
-                                                <p className="text-xl font-bold mt-2">{mpuData.gyro}</p>
-                                            </div>
-                                            <div className={`p-3 rounded-full ${gyroColors.indicator}`}>
-                                                <svg className={`h-6 w-6 ${gyroColors.text}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                                </svg>
-                                            </div>
-                                        </div>
-                                        <p className={`text-sm ${gyroColors.text} mt-3`}>Rotation rate (deg/s)</p>
+                                        {currentData.accelZ !== undefined ? (
+                                            accelZInRange ? (
+                                                <p className="text-xs mt-1 text-black">In Range</p>
+                                            ) : (
+                                                <p className="text-xs mt-1 text-black">Out of Range</p>
+                                            )
+                                        ) : (
+                                            <p className="text-xs mt-1 text-gray-500">No data</p>
+                                        )}
                                     </div>
                                 </div>
                             ) : (
