@@ -13,6 +13,7 @@ data = {row[0]: row[1:].tolist() for row in data_df.values}
 
 b, a = butter(N=2, Wn=2/(0.5*fs), btype='low')  # 二阶低通滤波器，cutoff=2Hz
 # filtered = filtfilt(b, a, data) 
+print("applied filter coefficients:", b, a)
 
 plt.figure(figsize=(12, 8))
 print("Data columns:", data_df.columns)

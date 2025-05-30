@@ -77,14 +77,7 @@ void setup() {
   mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
   delay(100);
 
-  // 初始化 VL53L0X
-  if (!vl53.begin()) {
-    Serial.println(F("Failed to boot VL53L0X"));
-    while (1);
-  }
-  Serial.println("VL53L0X Found!");
-  time_t now = time(nullptr);  // Unix 时间戳（秒）
-  sessionId = "session-" + String(now);
+
 }
 
 float movingAverage(float newValue) {
