@@ -53,9 +53,10 @@ const Arrow = ({ direction }: { direction: 'left' | 'right' }) => (
 function groupBySessionId(data: any[]) {
     const groups: Record<string, any[]> = {};
     data.forEach(item => {
-        const sessionId = item.sessionId || 'unknown';
-        if (!groups[sessionId]) groups[sessionId] = [];
-        groups[sessionId].push(item);
+        // Use batchId as the grouping key (from batch_XXXX)
+        const groupKey = item.batchId || item.sessionId || 'unknown';
+        if (!groups[groupKey]) groups[groupKey] = [];
+        groups[groupKey].push(item);
     });
     return groups;
 }
@@ -104,17 +105,32 @@ export default function DashboardPage() {
                     const data = snapshot.val();
                     console.log("Historical data received:", data);
                     if (data) {
-                        // Convert object to array and sort by timestamp
-                        const dataArray = Object.keys(data).map(key => ({
-                            id: key,
-                            ...data[key],
-                            // Convert timestamp to readable date/time
-                            time: new Date(data[key].timestamp*1000).toLocaleTimeString()
-                        }));
+                        // Handle nested structure: sensors/history/batch_X/recordId/sensorData
+                        const dataArray: any[] = [];
+                        
+                        // Iterate through each batch
+                        Object.keys(data).forEach(batchKey => {
+                            const batch = data[batchKey];
+                            if (batch && typeof batch === 'object') {
+                                // Iterate through each record in the batch
+                                Object.keys(batch).forEach(recordKey => {
+                                    const record = batch[recordKey];
+                                    if (record && typeof record === 'object') {
+                                        dataArray.push({
+                                            id: `${batchKey}-${recordKey}`,
+                                            batchId: batchKey,
+                                            recordId: recordKey,
+                                            ...record,
+                                            // Convert timestamp to readable date/time
+                                            time: record.timestamp ? new Date(record.timestamp * 1000).toLocaleTimeString() : 'N/A'
+                                        });
+                                    }
+                                });
+                            }
+                        });
 
                         // Sort by timestamp (descending - newest first)
-                        dataArray.sort((a, b) => b.timestamp - a.timestamp);
-
+                        dataArray.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
                         setHistoricalData(dataArray);
                     } else {
                         setHistoricalData([]);
@@ -237,9 +253,9 @@ export default function DashboardPage() {
     const grouped = groupBySessionId(historicalData);
 
     // 构建Collapse的items数组
-    const collapseItems = Object.entries(grouped).map(([sessionId, readings]) => ({
-        key: sessionId,
-        label: `Batch: ${sessionId}(${readings.length} pieces, Start Time: ${readings[0]?.timestamp ? new Date(readings[0].timestamp * 1000).toLocaleString() : 'N/A'})`,
+    const collapseItems = Object.entries(grouped).map(([groupKey, readings]) => ({
+        key: groupKey,
+        label: `Batch: ${groupKey} (${readings.length} pieces, Start Time: ${readings[0]?.timestamp ? new Date(readings[0].timestamp * 1000).toLocaleString() : 'N/A'})`,
         children: (
             <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50 sticky top-0">
@@ -252,9 +268,9 @@ export default function DashboardPage() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                     {readings.map((item: any, idx: number) =>
-                        ["weights", "accelX", "accelY", "accelZ"].map(sensor => (
+                        ["weight", "accelX", "accelY", "accelZ"].map(sensor => (
                             <tr
-                                key={`${item.sessionId || 'unknown'}-${item.timestamp || idx}-${sensor}`}
+                                key={`${groupKey}-${item.timestamp || idx}-${sensor}`}
                                 className="hover:bg-gray-50"
                             >
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -310,7 +326,7 @@ export default function DashboardPage() {
                 <div className="md:flex md:justify-between mb-6">
                     <div className="mb-4 md:mb-0">
                         <h2 className="text-2xl font-bold text-gray-800">CPR Training Dashboard</h2>
-                        <p className="text-gray-600 mt-1">Monitor CPR performance with MPU and TOF sensors</p>
+                        <p className="text-gray-600 mt-1">Monitor CPR performance with MPU and FSR sensors</p>
                     </div>
                     <div className="flex items-center space-x-4">
                         <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
@@ -338,31 +354,32 @@ export default function DashboardPage() {
                                 <div className="space-y-6">
                                     {/* 力传感器 */}
                                     <div className={`rounded-lg p-5 flex flex-col items-center ${currentData.weight >= 40 && currentData.weight <= 60 ? 'bg-green-50' : 'bg-red-50'}`}>
-                                        <p className="text-sm font-medium text-black-700">Weight</p>
-                                        <p className="text-3xl font-bold mt-2">{currentData.weight !== undefined ? `${currentData.weight.toFixed(2)} kg` : "N/A"}</p>
-                                        <p className="text-xs mt-1">{currentData.weight >= 40 && currentData.weight <= 60 ? 'In Range' : 'Out of Range'}</p>
+                                        <p className="text-sm font-medium text-gray-800">Weight</p>
+                                        <p className="text-3xl font-bold mt-2 text-gray-900">{currentData.weight !== undefined ? `${currentData.weight.toFixed(2)} kg` : "N/A"}</p>
+                                        <p className="text-xs mt-1 text-gray-700">{currentData.weight >= 40 && currentData.weight <= 60 ? 'In Range' : 'Out of Range'}</p>
                                     </div>
                                     {/* 加速度可视化 */}
                                     <div className={`rounded-lg p-5 flex flex-col items-center ${accelZInRange ? 'bg-green-50' : 'bg-red-50'}`}>
-                                        <p className="text-sm font-medium text-black-700">Vertical Acceleration</p>
+                                        <p className="text-sm font-medium text-gray-800">Vertical Acceleration</p>
                                         <div className="flex items-center justify-center mt-2">
-                                            {/* 左箭头：X或Y小于最小值 */}
-                                            {((currentData.accelX !== undefined && currentData.accelX < sensorRanges.accelX.min) ||
-                                              (currentData.accelY !== undefined && currentData.accelY < sensorRanges.accelY.min)) && <Arrow direction="left" />}
                                             {/* z轴数值 */}
-                                            <span className="text-3xl font-bold mx-4">{currentData.accelZ !== undefined ? currentData.accelZ.toFixed(2) : "N/A"}</span>
-                                            {/* 右箭头：X或Y大于最大值 */}
-                                            {((currentData.accelX !== undefined && currentData.accelX > sensorRanges.accelX.max) ||
-                                              (currentData.accelY !== undefined && currentData.accelY > sensorRanges.accelY.max)) && <Arrow direction="right" />}
+                                            <span className="text-3xl font-bold mx-4 text-gray-900">{currentData.accelZ !== undefined ? currentData.accelZ.toFixed(2) : "N/A"}</span>
                                         </div>
                                         {currentData.accelZ !== undefined ? (
                                             accelZInRange ? (
-                                                <p className="text-xs mt-1 text-black">In Range</p>
+                                                <p className="text-xs mt-1 text-gray-700">In Range</p>
                                             ) : (
-                                                <p className="text-xs mt-1 text-black">Out of Range</p>
+                                                <p className="text-xs mt-1 text-gray-700">Out of Range</p>
                                             )
                                         ) : (
                                             <p className="text-xs mt-1 text-gray-500">No data</p>
+                                        )}
+                                        {/* 检查X或Y轴是否超出范围，显示姿势提醒 */}
+                                        {((currentData.accelX !== undefined && (currentData.accelX < sensorRanges.accelX.min || currentData.accelX > sensorRanges.accelX.max)) ||
+                                          (currentData.accelY !== undefined && (currentData.accelY < sensorRanges.accelY.min || currentData.accelY > sensorRanges.accelY.max))) && (
+                                            <p className="text-xs mt-2 text-red-600 text-center font-medium">
+                                                posture not vertical, please adjust
+                                            </p>
                                         )}
                                     </div>
                                 </div>
