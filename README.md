@@ -17,32 +17,20 @@ Performing high-quality CPR requires chest compressions at the correct **depth**
 
 ## Our Solution
 
-TwoInchPulse addresses this need by integrating a **load cell**, **high-resolution ADC**, and **IMU** with an **ESP32-S3 microcontroller** to track compression force, motion, and rhythm. Feedback is provided through an **OLED display** and **buzzer**, allowing trainees to self-correct in real time.
+TwoInchPulse addresses this need by integrating a FSR,  and MPU6050 with an ESP32-S3 microcontroller to track compression force, motion, and rhythm. Feedback is provided through a buzzer, 2 LEDs, and a front-end, allowing trainees to self-correct in real time and review historical records for improvement.
 
 ---
 
 ## Key Features
 
 - **Compression Depth Measurement**  
-  Load cell + … ADC captures applied pressure to estimate compression depth.
-
+  Force Sensitive Resistor applied pressure to estimate compression depth.
 - **Smart Feedback Algorithm**  
-  The system categorizes each compression as:  
-  - Below threshold  
-  - Within target range  
-  - Exceeds safe limit
-
-- **Multimodal Output**  
-  Visual feedback via OLED; audio cues via buzzer for rhythm guidance and warning alerts.
-
-- **Command-Line Interface (CLI)**  
-  Real-time data from the sensors is streamed via Serial Monitor for validation and debugging.
-
-- **Low-Fidelity Prototype**  
-  Components are enclosed in a lightweight, cardboard shell, simulating final product placement.
-
+  The system includes a web app to showcase the current real-time data and enabled a review of historical records. LED on the device also gives user an intuitive feedback of the performance. A buzzer with indicated rythm also reminds user to perform the action in a timely speed.
+- **Flexible Enclosure**  
+  Enclosure designed with special material with flexible features allows the CPR process being safer and smoother.
 - **Low-Power, Portable System**  
-  Powered by a coin cell or LiPo battery for field use or mobile training.
+  Powered by a rechargeable  LiPo battery for field use or mobile training.
 
 ---
 
@@ -51,11 +39,9 @@ TwoInchPulse addresses this need by integrating a **load cell**, **high-resoluti
 | Component         | Model / Type         | Purpose                                |
 |------------------|----------------------|----------------------------------------|
 | MCU              | ESP32-S3            | Controls logic, collects data, BLE     |
-| Force Sensor     | Load Cell (100kg)   | Measures compression force             |
-| ADC              | NAU7802              | Converts analog signal to digital      |
-| Display          | OLED SSD1306 (I2C)   | Visual output for compression feedback |
-| Audio Output     | Passive Buzzer       | Provides auditory rhythm/alert cues    |
-| Power Supply     | CR2032 or LiPo       | Portable battery power                 |
+| Force Sensor     | FSR (50kg) | Measures compression force             |
+| Audio Output | Passive Buzzer | Provides auditory rhythm/alert cues |
+| Power Supply | LiPo           | Portable battery power              |
 
 ---
 
@@ -69,8 +55,25 @@ All hardware component datasheets are located in the [Datasheets](./Datasheets) 
 
 ```
 TECHIN515_TEAM5/
-├── Arduino Codes/
-│   ├── Milestone1.ino
+├── Arduino Codes/ # arduino codes in the iteration process
+│   ├── load_cell_test.ino
+│   ├── Firebase.ino
+│   ├── deliverable3.ino
+│   ├── deliverable5.ino
+│   ├── milestone3.ino
+├── cpr-dashboard/
+│   ├── # frontend files using Next.js framework
+├── Python Scripts/
+│   ├── # python files handling 
+
+
 ```
 
-Upload Milestone1.ino to the MCU
+1. Upload milestone3.ino to ESP32
+
+2. Go to cpr-dashboard 
+
+   1. run with command `npm install` to install dependencies
+   2. run with `npm run dev` to start the service locally
+
+   
